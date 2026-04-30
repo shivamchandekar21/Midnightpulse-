@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "576142432657",
+    "project_id": "midnightpulse-d5f4d",
+    "storage_bucket": "midnightpulse-d5f4d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:576142432657:android:e5713af6088ee6fdd4e230",
+        "android_client_info": {
+          "package_name": "com.midnightpulse.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARlm_Nf533r5oXFcQc40VUUIotkOKvXMI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
