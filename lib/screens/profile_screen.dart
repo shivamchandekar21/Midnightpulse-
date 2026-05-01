@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:midnight_pulse/auth/auth_service.dart';
+import 'package:midnight_pulse/providers/booking_providers.dart';
+import 'package:midnight_pulse/providers/user_providers.dart';
+import 'package:midnight_pulse/screens/booking_history_screen.dart';
+import 'package:midnight_pulse/screens/edit_profile_screen.dart';
+import 'package:midnight_pulse/screens/help_support_screen.dart';
+import 'package:midnight_pulse/screens/notifications_screen.dart';
+import 'package:midnight_pulse/screens/admin/admin_dashboard.dart';
+import 'package:midnight_pulse/screens/saved_events_screen.dart';
 import 'package:midnight_pulse/theme/app_theme.dart';
 import 'package:midnight_pulse/widgets/app_drawer.dart';
-import 'package:midnight_pulse/screens/edit_profile_screen.dart';
-import 'package:midnight_pulse/screens/saved_events_screen.dart';
-import 'package:midnight_pulse/screens/booking_history_screen.dart';
-import 'package:midnight_pulse/screens/notifications_screen.dart';
-import 'package:midnight_pulse/screens/help_support_screen.dart';
-import 'package:midnight_pulse/auth/auth_service.dart';
-import 'package:midnight_pulse/auth/login_page.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({
     super.key,
     required this.onSelectPage,
@@ -18,7 +21,11 @@ class ProfileScreen extends StatelessWidget {
   final ValueChanged<int> onSelectPage;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userAsync = ref.watch(appUserProvider);
+    final upcomingCount = ref.watch(upcomingBookingsProvider).length;
+    final savedCount = ref.watch(savedEventIdsProvider).length;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       drawer: AppDrawer(currentIndex: 2, onSelectPage: onSelectPage),
@@ -30,6 +37,7 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Header
                 Row(
                   children: [
                     Builder(
@@ -67,7 +75,7 @@ class ProfileScreen extends StatelessWidget {
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Settings can be connected next.'),
+                            content: Text('Settings coming in next update.'),
                           ),
                         );
                       },
@@ -75,93 +83,119 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    gradient: AppGradients.panel,
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 112,
-                        height: 112,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: AppGradients.primary,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.accent.withValues(alpha: 0.24),
-                              blurRadius: 22,
-                              offset: const Offset(0, 12),
+
+                // Profile card — driven by real Firestore data
+                userAsync.when(
+                  loading: () => const _ProfileCardSkeleton(),
+                  error: (e, _) => _ProfileCardError(message: e.toString()),
+                  data: (user) => Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      gradient: AppGradients.panel,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      children: [
+                        // Avatar
+                        Container(
+                          width: 112,
+                          height: 112,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: AppGradients.primary,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.accent.withValues(alpha: 0.24),
+                                blurRadius: 22,
+                                offset: const Offset(0, 12),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: user?.photoUrl.isNotEmpty == true
+                                ? ClipOval(
+                                    child: Image.network(
+                                      user!.photoUrl,
+                                      width: 112,
+                                      height: 112,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Text(
+                                    (user?.name.isNotEmpty == true)
+                                        ? user!.name[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                      fontSize: 44,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.background,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          user?.name ?? '—',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          user?.email ?? '—',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 14),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.violet.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.violet.withValues(alpha: 0.36),
                             ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.person_rounded,
-                            size: 58,
-                            color: AppColors.background,
+                          ),
+                          child: Text(
+                            user?.isMidnightPassMember == true
+                                ? 'MIDNIGHT PASS MEMBER'
+                                : 'FREE MEMBER',
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.violet,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        'John Doe',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'john.doe@email.com',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.violet.withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.violet.withValues(alpha: 0.36),
-                          ),
-                        ),
-                        child: Text(
-                          'MIDNIGHT PASS MEMBER',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.violet,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 18),
+
+                // Stats row
                 Row(
-                  children: const [
+                  children: [
                     Expanded(
                       child: _ProfileStat(
                         label: 'Upcoming',
-                        value: '04',
+                        value: upcomingCount.toString().padLeft(2, '0'),
                         icon: Icons.confirmation_number_rounded,
                         color: AppColors.accent,
                       ),
                     ),
-                    SizedBox(width: 14),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: _ProfileStat(
                         label: 'Saved',
-                        value: '11',
+                        value: savedCount.toString().padLeft(2, '0'),
                         icon: Icons.favorite_outline_rounded,
                         color: AppColors.violet,
                       ),
@@ -169,6 +203,8 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 18),
+
+                // Menu options
                 _ProfileOption(
                   icon: Icons.edit_outlined,
                   title: 'Edit Profile',
@@ -190,7 +226,9 @@ class ProfileScreen extends StatelessWidget {
                   title: 'Booking History',
                   subtitle: 'Review past purchases and completed entries.',
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const BookingHistoryScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const BookingHistoryScreen(),
+                    ),
                   ),
                 ),
                 _ProfileOption(
@@ -198,7 +236,9 @@ class ProfileScreen extends StatelessWidget {
                   title: 'Notifications',
                   subtitle: 'Choose alerts for drops, reminders, and payments.',
                   onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const NotificationsScreen(),
+                    ),
                   ),
                 ),
                 _ProfileOption(
@@ -209,17 +249,25 @@ class ProfileScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
                   ),
                 ),
+                userAsync.value?.isAdmin == true
+                    ? _ProfileOption(
+                        icon: Icons.admin_panel_settings_outlined,
+                        title: 'Admin Panel',
+                        subtitle: 'Manage events, bookings and notifications.',
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AdminDashboard(),
+                          ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
                 _ProfileOption(
                   icon: Icons.logout_rounded,
                   title: 'Logout',
                   subtitle: 'End this session on the current device.',
                   onTap: () async {
                     await AuthService().signOut();
-                    if (!context.mounted) return;
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const LoginPage()),
-                      (Route<dynamic> route) => false,
-                    );
+                    // AuthGate will auto-redirect to LoginPage via stream
                   },
                   isDestructive: true,
                 ),
@@ -231,6 +279,74 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 }
+
+// ─── Skeleton & Error widgets ────────────────────────────────────────────────
+
+class _ProfileCardSkeleton extends StatelessWidget {
+  const _ProfileCardSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 112,
+            height: 112,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.surfaceStrong,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            width: 140,
+            height: 18,
+            color: AppColors.surfaceStrong,
+          ),
+          const SizedBox(height: 10),
+          Container(
+            width: 200,
+            height: 14,
+            color: AppColors.surfaceStrong,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileCardError extends StatelessWidget {
+  const _ProfileCardError({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(
+        'Failed to load profile: $message',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFFFF8A80),
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+}
+
+// ─── Reusable sub-widgets ─────────────────────────────────────────────────────
 
 class _ProfileOption extends StatelessWidget {
   const _ProfileOption({

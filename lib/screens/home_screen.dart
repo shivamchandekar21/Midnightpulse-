@@ -187,7 +187,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final filters = ref.watch(availableEventFiltersProvider);
     final filterState = ref.watch(eventFiltersProvider);
     final eventsAsync = ref.watch(filteredEventsStateProvider);
-    final totalEvents = eventsAsync.valueOrNull?.items.length ?? 0;
+    final totalEvents = eventsAsync.value?.items.length ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,

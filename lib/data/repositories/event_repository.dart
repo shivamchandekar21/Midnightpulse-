@@ -38,7 +38,7 @@ class FirestoreEventRepository implements EventRepository {
     } catch (exception, stackTrace) {
       Error.throwWithStackTrace(
         AppException(
-          message: 'Unexpected repository error while processing events.',
+          'Unexpected repository error while processing events.',
           cause: exception,
         ),
         stackTrace,

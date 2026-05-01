@@ -1,8 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 
 class AppException implements Exception {
-  const AppException({
-    required this.message,
+  const AppException(
+    this.message, {
     this.code,
     this.cause,
   });
@@ -11,16 +11,47 @@ class AppException implements Exception {
   final String? code;
   final Object? cause;
 
+  factory AppException.fromFirestore(Object e) {
+    if (e is FirebaseException) {
+      return AppException(
+        _buildFirebaseMessage(e),
+        code: e.code,
+        cause: e,
+      );
+    }
+    if (e is AppException) return e;
+    return AppException(e.toString(), cause: e);
+  }
+
+  static String _buildFirebaseMessage(FirebaseException exception) {
+    switch (exception.code) {
+      case 'permission-denied':
+        return 'Permission denied. Please log in again.';
+      case 'unavailable':
+        return 'Service unavailable. Please try again.';
+      case 'not-found':
+        return 'The requested document was not found.';
+      case 'already-exists':
+        return 'A document for this request already exists.';
+      case 'cancelled':
+        return 'The request was cancelled.';
+      case 'deadline-exceeded':
+        return 'The request timed out. Please try again.';
+      default:
+        return exception.message ?? 'An unexpected error occurred.';
+    }
+  }
+
   @override
   String toString() => message;
 }
 
 class FirestoreException extends AppException {
   const FirestoreException({
-    required super.message,
-    super.code,
-    super.cause,
-  });
+    required String message,
+    String? code,
+    Object? cause,
+  }) : super(message, code: code, cause: cause);
 
   factory FirestoreException.fromFirebase(
     FirebaseException exception, {

@@ -13,6 +13,10 @@ class Event {
     required this.imageUrl,
     this.isPremium = false,
     this.isActive = true,
+    this.totalSeats = 0,
+    this.bookedSeats = 0,
+    this.averageRating = 0,
+    this.reviewCount = 0,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -28,6 +32,10 @@ class Event {
   final String imageUrl;
   final bool isPremium;
   final bool isActive;
+  final int totalSeats;
+  final int bookedSeats;
+  final double averageRating;
+  final int reviewCount;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -53,6 +61,10 @@ class Event {
     String? imageUrl,
     bool? isPremium,
     bool? isActive,
+    int? totalSeats,
+    int? bookedSeats,
+    double? averageRating,
+    int? reviewCount,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -68,6 +80,10 @@ class Event {
       imageUrl: imageUrl ?? this.imageUrl,
       isPremium: isPremium ?? this.isPremium,
       isActive: isActive ?? this.isActive,
+      totalSeats: totalSeats ?? this.totalSeats,
+      bookedSeats: bookedSeats ?? this.bookedSeats,
+      averageRating: averageRating ?? this.averageRating,
+      reviewCount: reviewCount ?? this.reviewCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -85,6 +101,10 @@ class Event {
       'imageUrl': imageUrl,
       'isPremium': isPremium,
       'isActive': isActive,
+      'totalSeats': totalSeats,
+      'bookedSeats': bookedSeats,
+      'averageRating': averageRating,
+      'reviewCount': reviewCount,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -118,6 +138,10 @@ class Event {
           'assets/driveripic.png',
       isPremium: map['isPremium'] as bool? ?? false,
       isActive: map['isActive'] as bool? ?? true,
+      totalSeats: (map['totalSeats'] as num?)?.toInt() ?? 0,
+      bookedSeats: (map['bookedSeats'] as num?)?.toInt() ?? 0,
+      averageRating: (map['averageRating'] as num?)?.toDouble() ?? 0,
+      reviewCount: (map['reviewCount'] as num?)?.toInt() ?? 0,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -172,26 +196,4 @@ class Event {
 
     return '$hour:$minute $suffix';
   }
-}
-
-class Booking {
-  const Booking({
-    required this.title,
-    required this.date,
-    required this.time,
-    required this.details,
-    required this.status,
-    required this.isConfirmed,
-    required this.assetPath,
-    this.isSaved = false,
-  });
-
-  final String title;
-  final String date;
-  final String time;
-  final String details;
-  final String status;
-  final bool isConfirmed;
-  final String assetPath;
-  final bool isSaved;
 }

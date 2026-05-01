@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:midnight_pulse/data/models/event.dart';
 import 'package:midnight_pulse/theme/app_theme.dart';
 
 class BookingHistoryScreen extends StatelessWidget {
@@ -8,22 +7,20 @@ class BookingHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const sample = [
-      Booking(
+      _HistoryBooking(
         title: 'Neon Pulse Fest',
         date: 'Oct 24, 2024',
         time: '9:00 PM',
         details: 'Standard Pass / Row A / Seat 12',
         status: 'PAID',
-        isConfirmed: true,
         assetPath: 'assets/driveripic.png',
       ),
-      Booking(
+      _HistoryBooking(
         title: 'Midnight Galaxy',
         date: 'Nov 02, 2024',
         time: '11:30 PM',
         details: 'VIP Access / All-inclusive',
         status: 'REFUNDED',
-        isConfirmed: false,
         assetPath: 'assets/driveripic.png',
       ),
     ];
@@ -86,4 +83,22 @@ class BookingHistoryScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HistoryBooking {
+  const _HistoryBooking({
+    required this.title,
+    required this.date,
+    required this.time,
+    required this.details,
+    required this.status,
+    required this.assetPath,
+  });
+
+  final String title;
+  final String date;
+  final String time;
+  final String details;
+  final String status;
+  final String assetPath;
 }

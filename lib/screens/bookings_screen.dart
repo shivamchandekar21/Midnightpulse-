@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:midnight_pulse/data/models/event.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:midnight_pulse/data/models/booking_model.dart';
+import 'package:midnight_pulse/providers/booking_providers.dart';
 import 'package:midnight_pulse/theme/app_theme.dart';
 import 'package:midnight_pulse/widgets/app_drawer.dart';
 
-class BookingsScreen extends StatefulWidget {
+class BookingsScreen extends ConsumerStatefulWidget {
   const BookingsScreen({
     super.key,
     required this.onSelectPage,
@@ -12,71 +14,28 @@ class BookingsScreen extends StatefulWidget {
   final ValueChanged<int> onSelectPage;
 
   @override
-  State<BookingsScreen> createState() => _BookingsScreenState();
+  ConsumerState<BookingsScreen> createState() => _BookingsScreenState();
 }
 
-class _BookingsScreenState extends State<BookingsScreen> {
+class _BookingsScreenState extends ConsumerState<BookingsScreen> {
   int _selectedTab = 0;
 
-  final List<String> tabs = ['Upcoming', 'Past Events', 'Saved'];
-
-  final List<Booking> bookings = const [
-    Booking(
-      title: 'Neon Pulse Fest',
-      date: 'Oct 24, 2024',
-      time: '9:00 PM',
-      details: 'Standard Pass / Row A / Seat 12',
-      status: 'CONFIRMED',
-      isConfirmed: true,
-      assetPath: 'assets/driveripic.png',
-    ),
-    Booking(
-      title: 'Midnight Galaxy',
-      date: 'Nov 02, 2024',
-      time: '11:30 PM',
-      details: 'VIP Access / All-inclusive',
-      status: 'CONFIRMED',
-      isConfirmed: true,
-      assetPath: 'assets/driveripic.png',
-      isSaved: true,
-    ),
-    Booking(
-      title: 'Cyberpunk Ascent',
-      date: 'Sep 15, 2024',
-      time: '10:00 PM',
-      details: 'Early Bird / General Entry',
-      status: 'COMPLETED',
-      isConfirmed: false,
-      assetPath: 'assets/driveripic.png',
-    ),
-    Booking(
-      title: 'Techno Underground',
-      date: 'Dec 12, 2024',
-      time: '11:00 PM',
-      details: 'Basement Access / Guestlist',
-      status: 'CONFIRMED',
-      isConfirmed: true,
-      assetPath: 'assets/driveripic.png',
-      isSaved: true,
-    ),
-  ];
-
-  List<Booking> get _activeBookings {
-    if (_selectedTab == 0) {
-      return bookings.where((booking) => booking.status == 'CONFIRMED').toList();
-    }
-
-    if (_selectedTab == 1) {
-      return bookings.where((booking) => booking.status == 'COMPLETED').toList();
-    }
-
-    return bookings.where((booking) => booking.isSaved).toList();
-  }
+  final List<String> tabs = ['Upcoming', 'Past Events', 'Cancelled'];
 
   @override
   Widget build(BuildContext context) {
-    final upcomingCount =
-        bookings.where((booking) => booking.status == 'CONFIRMED').length;
+    final bookingsAsync = ref.watch(userBookingsProvider);
+    final upcomingBookings = ref.watch(upcomingBookingsProvider);
+    final pastBookings = ref.watch(pastBookingsProvider);
+    final cancelledBookings = ref.watch(cancelledBookingsProvider);
+
+    final activeList = switch (_selectedTab) {
+      0 => upcomingBookings,
+      1 => pastBookings,
+      _ => cancelledBookings,
+    };
+
+    final upcomingCount = upcomingBookings.length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -89,6 +48,7 @@ class _BookingsScreenState extends State<BookingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header
                 Row(
                   children: [
                     Builder(
@@ -134,6 +94,8 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
+
+                // Ticket vault banner
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -180,42 +142,51 @@ class _BookingsScreenState extends State<BookingsScreen> {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      Container(
-                        height: 96,
-                        width: 96,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceStrong.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              upcomingCount.toString().padLeft(2, '0'),
-                              style: Theme.of(context).textTheme.headlineMedium
-                                  ?.copyWith(
-                                    color: AppColors.accent,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'LIVE',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.5,
-                                  ),
-                            ),
-                          ],
+                      bookingsAsync.when(
+                        loading: () => const _LiveCountSkeleton(),
+                        error: (_, __) => const SizedBox.shrink(),
+                        data: (_) => Container(
+                          height: 96,
+                          width: 96,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceStrong
+                                .withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                upcomingCount.toString().padLeft(2, '0'),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineMedium?.copyWith(
+                                  color: AppColors.accent,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'LIVE',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
+
+                // Tab bar
                 SizedBox(
                   height: 44,
                   child: ListView.separated(
@@ -250,13 +221,14 @@ class _BookingsScreenState extends State<BookingsScreen> {
                           child: Center(
                             child: Text(
                               tabs[index],
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: isSelected
-                                        ? AppColors.textPrimary
-                                        : AppColors.textSecondary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(
+                                color: isSelected
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
@@ -265,33 +237,29 @@ class _BookingsScreenState extends State<BookingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
+
+                // Booking list
                 Expanded(
-                  child: _activeBookings.isNotEmpty
-                      ? ListView.separated(
-                          itemCount: _activeBookings.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 16),
-                          itemBuilder: (context, index) {
-                            final booking = _activeBookings[index];
-                            return _BookingCard(booking: booking);
-                          },
-                        )
-                      : Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Text(
-                              'No tickets are parked in this section yet.',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: AppColors.textSecondary),
-                            ),
-                          ),
-                        ),
+                  child: bookingsAsync.when(
+                    loading: () => const _BookingListSkeleton(),
+                    error: (e, _) => _ErrorState(message: e.toString()),
+                    data: (_) => activeList.isNotEmpty
+                        ? ListView.separated(
+                            itemCount: activeList.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 16),
+                            itemBuilder: (context, index) {
+                              return _BookingCard(
+                                booking: activeList[index],
+                              );
+                            },
+                          )
+                        : const _EmptyState(),
+                  ),
                 ),
                 const SizedBox(height: 16),
+
+                // VIP upsell
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -305,18 +273,20 @@ class _BookingsScreenState extends State<BookingsScreen> {
                     children: [
                       Text(
                         'Unlock VIP perks',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Upgrade to Midnight Pass for priority entry, reserved lanes, and members-only drops.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                          height: 1.45,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.45,
+                            ),
                       ),
                     ],
                   ),
@@ -330,12 +300,25 @@ class _BookingsScreenState extends State<BookingsScreen> {
   }
 }
 
-class _BookingCard extends StatelessWidget {
-  const _BookingCard({
-    required this.booking,
-  });
+// ─── Booking Card ─────────────────────────────────────────────────────────────
 
-  final Booking booking;
+class _BookingCard extends StatelessWidget {
+  const _BookingCard({required this.booking});
+
+  final BookingModel booking;
+
+  Color get _statusColor {
+    switch (booking.status) {
+      case BookingStatus.confirmed:
+        return AppColors.accent;
+      case BookingStatus.completed:
+        return AppColors.violet;
+      case BookingStatus.cancelled:
+        return const Color(0xFFFF8A80);
+      case BookingStatus.pending:
+        return Colors.orange;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -348,14 +331,32 @@ class _BookingCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
+          // Event image
           ClipRRect(
             borderRadius: BorderRadius.circular(18),
-            child: Image.asset(
-              booking.assetPath,
-              height: 102,
-              width: 92,
-              fit: BoxFit.cover,
-            ),
+            child: booking.imageUrl.startsWith('assets/')
+                ? Image.asset(
+                    booking.imageUrl.isNotEmpty
+                        ? booking.imageUrl
+                        : 'assets/driveripic.png',
+                    height: 102,
+                    width: 92,
+                    fit: BoxFit.cover,
+                  )
+                : Image.network(
+                    booking.imageUrl.isNotEmpty
+                        ? booking.imageUrl
+                        : '',
+                    height: 102,
+                    width: 92,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      'assets/driveripic.png',
+                      height: 102,
+                      width: 92,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -366,12 +367,14 @@ class _BookingCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        booking.title,
+                        booking.eventTitle,
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               color: AppColors.textPrimary,
                               fontWeight: FontWeight.w800,
                             ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Container(
@@ -380,17 +383,13 @@ class _BookingCard extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: booking.isConfirmed
-                            ? AppColors.accent.withValues(alpha: 0.14)
-                            : AppColors.violet.withValues(alpha: 0.16),
+                        color: _statusColor.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
-                        booking.status,
+                        booking.displayStatus,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: booking.isConfirmed
-                              ? AppColors.accent
-                              : AppColors.violet,
+                          color: _statusColor,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
                         ),
@@ -401,12 +400,18 @@ class _BookingCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 _BookingMeta(
                   icon: Icons.schedule_rounded,
-                  text: '${booking.date}  |  ${booking.time}',
+                  text: _formatEventDate(booking.eventDate),
+                ),
+                const SizedBox(height: 8),
+                _BookingMeta(
+                  icon: Icons.location_on_outlined,
+                  text: booking.eventLocation,
                 ),
                 const SizedBox(height: 8),
                 _BookingMeta(
                   icon: Icons.confirmation_number_outlined,
-                  text: booking.details,
+                  text:
+                      '${booking.ticketCount} ticket${booking.ticketCount > 1 ? 's' : ''} · ₹${booking.totalInRupees.toStringAsFixed(0)}',
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -422,7 +427,11 @@ class _BookingCard extends StatelessWidget {
                         border: Border.all(color: AppColors.border),
                       ),
                       child: Text(
-                        booking.isConfirmed ? 'Digital Entry' : 'Completed Night',
+                        booking.isUpcoming
+                            ? 'View Ticket'
+                            : booking.isCompleted
+                                ? 'Rate Event'
+                                : 'Cancelled',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w700,
@@ -443,13 +452,25 @@ class _BookingCard extends StatelessWidget {
       ),
     );
   }
+
+  String _formatEventDate(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final month = months[date.month - 1];
+    final day = date.day.toString().padLeft(2, '0');
+    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final minute = date.minute.toString().padLeft(2, '0');
+    final suffix = date.hour >= 12 ? 'PM' : 'AM';
+    return '$month $day, ${date.year}  ·  $hour:$minute $suffix';
+  }
 }
 
+// ─── Supporting widgets ───────────────────────────────────────────────────────
+
 class _BookingMeta extends StatelessWidget {
-  const _BookingMeta({
-    required this.icon,
-    required this.text,
-  });
+  const _BookingMeta({required this.icon, required this.text});
 
   final IconData icon;
   final String text;
@@ -467,6 +488,8 @@ class _BookingMeta extends StatelessWidget {
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -474,11 +497,98 @@ class _BookingMeta extends StatelessWidget {
   }
 }
 
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.confirmation_number_outlined,
+              size: 48,
+              color: AppColors.textMuted,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No tickets parked here yet.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          'Error: $message',
+          style: const TextStyle(color: Color(0xFFFF8A80)),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
+
+class _BookingListSkeleton extends StatelessWidget {
+  const _BookingListSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      itemCount: 3,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (_, __) => Container(
+        height: 130,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.border),
+        ),
+      ),
+    );
+  }
+}
+
+class _LiveCountSkeleton extends StatelessWidget {
+  const _LiveCountSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 96,
+      width: 96,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceStrong,
+        borderRadius: BorderRadius.circular(24),
+      ),
+    );
+  }
+}
+
 class _TopIconButton extends StatelessWidget {
-  const _TopIconButton({
-    required this.icon,
-    required this.onTap,
-  });
+  const _TopIconButton({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;

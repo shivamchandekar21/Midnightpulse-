@@ -33,12 +33,12 @@ final eventFiltersProvider =
     );
 
 final eventsControllerProvider =
-    AsyncNotifierProvider<EventsController, EventListState>(
+    NotifierProvider<EventsController, AsyncValue<EventListState>>(
       EventsController.new,
     );
 
 final availableEventFiltersProvider = Provider<List<String>>((ref) {
-  final events = ref.watch(eventsControllerProvider).valueOrNull?.items ?? [];
+  final events = ref.watch(eventsControllerProvider).value?.items ?? [];
   final uniqueTags =
       events
           .map((event) => event.tag.trim())
@@ -141,14 +141,19 @@ class EventListState {
   }
 }
 
-class EventsController extends AsyncNotifier<EventListState> {
+class EventsController extends Notifier<AsyncValue<EventListState>> {
   static const int _pageSize = 6;
 
   EventRepository get _repository => ref.read(eventRepositoryProvider);
 
   @override
-  Future<EventListState> build() {
-    return _fetchFirstPage();
+  AsyncValue<EventListState> build() {
+    _fetchFirstPage().then((page) {
+      state = AsyncData(page);
+    }).catchError((Object error, StackTrace st) {
+      state = AsyncError(error, st);
+    });
+    return const AsyncLoading();
   }
 
   Future<EventListState> _fetchFirstPage() async {
@@ -163,11 +168,16 @@ class EventsController extends AsyncNotifier<EventListState> {
 
   Future<void> refreshEvents() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(_fetchFirstPage);
+    try {
+      final page = await _fetchFirstPage();
+      state = AsyncData(page);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+    }
   }
 
   Future<void> loadMore() async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
 
     if (currentState == null ||
         currentState.isLoadingMore ||
@@ -197,7 +207,7 @@ class EventsController extends AsyncNotifier<EventListState> {
   }
 
   Future<void> createEvent(Event event) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
 
     try {
       await _repository.createEvent(event);
@@ -211,7 +221,7 @@ class EventsController extends AsyncNotifier<EventListState> {
   }
 
   Future<void> updateEvent(Event event) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
 
     try {
       await _repository.updateEvent(event);
@@ -225,7 +235,7 @@ class EventsController extends AsyncNotifier<EventListState> {
   }
 
   Future<void> deleteEvent(String eventId) async {
-    final currentState = state.valueOrNull;
+    final currentState = state.value;
 
     try {
       await _repository.deleteEvent(eventId);

@@ -157,9 +157,7 @@ class EventFirestoreService extends FirestoreService {
 
   Future<void> updateEvent(Event event) async {
     if (event.id.isEmpty) {
-      throw const AppException(
-        message: 'Cannot update an event without a document id.',
-      );
+      throw const AppException('Cannot update an event without a document id.');
     }
 
     try {
