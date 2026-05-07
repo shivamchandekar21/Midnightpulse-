@@ -1,6 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:midnight_pulse/data/models/app_user.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -9,84 +8,84 @@ class AuthService {
   // Get current user
   User? get currentUser => _auth.currentUser;
 
-  // Auth state stream
+  // Auth state changes stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  // Sign in
-  Future<UserCredential> signInWithEmailAndPassword(
-    String email,
-    String password,
-  ) async {
-    try {
-      final userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      return userCredential;
-    } on FirebaseAuthException catch (e) {
-      throw Exception(_authErrorMessage(e.code));
-    }
-  }
-
-  // Sign up — creates full AppUser doc in Firestore
-  Future<UserCredential> signUpWithEmailAndPassword(
-    String name,
-    String email,
-    String password,
-  ) async {
+  // Sign up with email and password
+  Future<String?> signUp({
+    required String email,
+    required String password,
+  }) async {
     try {
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-
-      // Update display name in Firebase Auth
-      await userCredential.user?.updateDisplayName(name);
-
-      // Create full AppUser document in Firestore
-      final appUser = AppUser.fromSignUp(
-        uid: userCredential.user!.uid,
-        name: name,
-        email: email,
-      );
-
-      await _firestore
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .set(appUser.toMap());
-
-      return userCredential;
+      
+      // Create AppUser doc in Firestore
+      if (userCredential.user != null) {
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'email': email,
+          'name': '',
+          'phone': '',
+          'photoUrl': '',
+          'savedEventIds': [],
+          'fcmToken': '',
+          'isAdmin': false,
+          'membershipTier': 'free',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+      
+      return null; // Success
     } on FirebaseAuthException catch (e) {
-      throw Exception(_authErrorMessage(e.code));
+      if (e.code == 'weak-password') {
+        return 'The password is too weak.';
+      } else if (e.code == 'email-already-in-use') {
+        return 'An account already exists for this email.';
+      } else {
+        return e.message ?? 'An error occurred';
+      }
+    } catch (e) {
+      return 'An error occurred: $e';
+    }
+  }
+
+  // Sign in with email and password
+  Future<String?> signIn({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return null; // Success
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        return 'No user found for this email.';
+      } else if (e.code == 'wrong-password') {
+        return 'Wrong password provided.';
+      } else {
+        return e.message ?? 'An error occurred';
+      }
+    } catch (e) {
+      return 'An error occurred: $e';
     }
   }
 
   // Sign out
   Future<void> signOut() async {
-    return await _auth.signOut();
+    await _auth.signOut();
   }
 
-  // User-friendly error messages
-  String _authErrorMessage(String code) {
-    switch (code) {
-      case 'user-not-found':
-        return 'No account found with this email.';
-      case 'wrong-password':
-        return 'Incorrect password. Please try again.';
-      case 'invalid-credential':
-        return 'Invalid credentials. Check your email and password.';
-      case 'email-already-in-use':
-        return 'An account already exists with this email.';
-      case 'weak-password':
-        return 'Password is too weak. Use at least 6 characters.';
-      case 'invalid-email':
-        return 'Please enter a valid email address.';
-      case 'too-many-requests':
-        return 'Too many failed attempts. Please try again later.';
-      case 'network-request-failed':
-        return 'Network error. Please check your connection.';
-      default:
-        return 'Authentication failed. Please try again.';
+  // Reset password
+  Future<String?> resetPassword({required String email}) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return null; // Success
+    } on FirebaseAuthException catch (e) {
+      return e.message ?? 'An error occurred';
+    } catch (e) {
+      return 'An error occurred: $e';
     }
   }
 }

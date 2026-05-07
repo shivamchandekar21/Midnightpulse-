@@ -51,10 +51,11 @@ class CreateBookingNotifier
       final result = await ref
           .read(bookingFirestoreServiceProvider)
           .createBooking(booking);
+      if (!ref.mounted) return result;
       state = AsyncData(result);
       return result;
     } catch (e, st) {
-      state = AsyncError(e, st);
+      if (ref.mounted) state = AsyncError(e, st);
       rethrow;
     }
   }
@@ -77,22 +78,24 @@ class CreateBookingNotifier
             razorpayPaymentId: razorpayPaymentId,
             razorpayOrderId: razorpayOrderId,
           );
+      if (!ref.mounted) return;
       state = AsyncData(state.value);
     } catch (e, st) {
-      state = AsyncError(e, st);
+      if (ref.mounted) state = AsyncError(e, st);
       rethrow;
     }
   }
 
   Future<void> createPayment(PaymentModel payment) async {
+    if (!ref.mounted) return;
     await ref.read(bookingFirestoreServiceProvider).createPayment(payment);
   }
 }
 
 final createBookingProvider =
-    NotifierProvider.autoDispose<CreateBookingNotifier, AsyncValue<BookingModel?>>(
-      CreateBookingNotifier.new,
-    );
+    NotifierProvider<CreateBookingNotifier, AsyncValue<BookingModel?>>(
+  CreateBookingNotifier.new,
+);
 
 // ─── Cancel Booking ───────────────────────────────────────────────────────────
 

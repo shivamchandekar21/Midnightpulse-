@@ -1,6 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:http/http.dart' as http;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class RazorpayOrder {
@@ -35,12 +36,14 @@ class RazorpayService {
     defaultValue: 'rzp_test_change_me',
   );
 
+  // For Android emulator pointing to localhost, use 10.0.2.2.
+  // For iOS simulator or web, use localhost.
+  static const String _baseUrl = 'http://10.0.2.2:3000';
+
   RazorpayService({
     Razorpay? razorpay,
-    FirebaseFunctions? functions,
     String? keyId,
   })  : _razorpay = razorpay ?? Razorpay(),
-        _functions = functions ?? FirebaseFunctions.instance,
         _keyId = keyId ?? _defaultRazorpayKey {
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _onPaymentSuccess);
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _onPaymentError);
@@ -48,7 +51,6 @@ class RazorpayService {
   }
 
   final Razorpay _razorpay;
-  final FirebaseFunctions _functions;
   final String _keyId;
   Completer<RazorpayPaymentResult>? _paymentCompleter;
 
@@ -58,19 +60,13 @@ class RazorpayService {
     required String receipt,
     Map<String, dynamic>? notes,
   }) async {
-    final callable = _functions.httpsCallable('createRazorpayOrder');
-    final response = await callable.call(<String, dynamic>{
-      'amount': amount,
-      'currency': currency,
-      'receipt': receipt,
-      'notes': notes ?? const <String, dynamic>{},
-    });
-
-    final data = Map<String, dynamic>.from(response.data as Map);
+    // 🔴 COMPLETELY MOCKING THE SERVER CALL 🔴
+    // This allows testing the Flutter app without needing the Node.js server running!
+    await Future.delayed(const Duration(milliseconds: 500));
     return RazorpayOrder(
-      id: data['orderId'] as String? ?? '',
-      amount: (data['amount'] as num?)?.toInt() ?? amount,
-      currency: data['currency'] as String? ?? currency,
+      id: 'order_mock_${DateTime.now().millisecondsSinceEpoch}',
+      amount: amount,
+      currency: currency,
     );
   }
 
@@ -80,13 +76,10 @@ class RazorpayService {
     required String razorpayPaymentId,
     required String razorpaySignature,
   }) async {
-    final callable = _functions.httpsCallable('verifyPayment');
-    await callable.call(<String, dynamic>{
-      'bookingId': bookingId,
-      'razorpayOrderId': razorpayOrderId,
-      'razorpayPaymentId': razorpayPaymentId,
-      'razorpaySignature': razorpaySignature,
-    });
+    // 🔴 COMPLETELY MOCKING THE SERVER CALL 🔴
+    await Future.delayed(const Duration(milliseconds: 500));
+    // Simulate successful server verification
+    return;
   }
 
   Future<RazorpayPaymentResult> openCheckout({
@@ -96,6 +89,20 @@ class RazorpayService {
     required String prefillEmail,
     required String prefillContact,
   }) {
+    // If the server returned a stub order (dev mode), simulate a successful
+    // payment so the developer can test flows without the Razorpay SDK.
+    if (order.id.startsWith('order_stub_')) {
+      final simulatedPaymentId = 'pay_stub_${DateTime.now().millisecondsSinceEpoch}';
+      return Future.delayed(const Duration(seconds: 1), () {
+        return RazorpayPaymentResult(
+          paymentId: simulatedPaymentId,
+          orderId: order.id,
+          signature: 'sig_stub',
+          method: 'upi',
+        );
+      });
+    }
+
     _paymentCompleter = Completer<RazorpayPaymentResult>();
     _razorpay.open(<String, dynamic>{
       'key': _keyId,

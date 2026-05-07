@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midnight_pulse/auth/auth_service.dart';
@@ -21,3 +22,50 @@ final currentUserIdProvider = Provider<String?>((ref) {
 final userFirestoreServiceProvider = Provider<UserFirestoreService>(
   (ref) => UserFirestoreService(ref.watch(firebaseFirestoreProvider)),
 );
+
+class AuthActionNotifier extends AsyncNotifier<void> {
+  @override
+  FutureOr<void> build() {}
+
+  Future<void> signIn({required String email, required String password}) async {
+    state = const AsyncLoading();
+    try {
+      final authService = ref.read(authServiceProvider);
+      final error = await authService.signIn(email: email, password: password);
+      if (error != null) {
+        state = AsyncError(error, StackTrace.current);
+        throw Exception(error);
+      } else {
+        state = const AsyncData(null);
+      }
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  Future<void> signUp({required String email, required String password, required String name}) async {
+    state = const AsyncLoading();
+    try {
+      final authService = ref.read(authServiceProvider);
+      final error = await authService.signUp(email: email, password: password);
+      if (error != null) {
+        state = AsyncError(error, StackTrace.current);
+        throw Exception(error);
+      } else {
+        final user = authService.currentUser;
+        if (user != null) {
+          await ref.read(firebaseFirestoreProvider).collection('users').doc(user.uid).update({'name': name});
+        }
+        state = const AsyncData(null);
+      }
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+}
+
+final signInProvider = AsyncNotifierProvider.autoDispose<AuthActionNotifier, void>(AuthActionNotifier.new);
+
+final signUpProvider = AsyncNotifierProvider.autoDispose<AuthActionNotifier, void>(AuthActionNotifier.new);

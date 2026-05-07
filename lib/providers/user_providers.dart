@@ -51,7 +51,7 @@ class SavedEventToggleNotifier extends Notifier<AsyncValue<void>> {
 }
 
 final savedEventToggleProvider =
-    NotifierProvider.autoDispose<SavedEventToggleNotifier, AsyncValue<void>>(
+    NotifierProvider<SavedEventToggleNotifier, AsyncValue<void>>(
       SavedEventToggleNotifier.new,
     );
 
@@ -73,14 +73,16 @@ class UpdateUserNotifier extends Notifier<AsyncValue<void>> {
             ...fields,
             'updatedAt': FieldValue.serverTimestamp(),
           });
+      if (!ref.mounted) return;
       state = const AsyncData(null);
     } catch (e, st) {
+      if (!ref.mounted) return;
       state = AsyncError(e, st);
     }
   }
 }
 
 final updateUserProvider =
-    NotifierProvider.autoDispose<UpdateUserNotifier, AsyncValue<void>>(
+    NotifierProvider<UpdateUserNotifier, AsyncValue<void>>(
       UpdateUserNotifier.new,
     );

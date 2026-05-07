@@ -10,18 +10,22 @@ class EventCard extends StatelessWidget {
     this.onTap,
     this.onAdd,
     this.onLongPress,
+    this.onDoubleTap,
   });
 
   final Event event;
   final VoidCallback? onTap;
   final VoidCallback? onAdd;
   final VoidCallback? onLongPress;
+  final VoidCallback? onDoubleTap;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
+      onDoubleTap: onDoubleTap,
       onLongPress: onLongPress,
+
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),

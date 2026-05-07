@@ -47,7 +47,8 @@ class UserFirestoreService {
   /// Merge-update specific fields for a user.
   Future<void> updateUser(String uid, Map<String, dynamic> fields) async {
     try {
-      await _usersRef.doc(uid).update(fields);
+      // Use set with merge so updates succeed even if the document doesn't exist.
+      await _usersRef.doc(uid).set(fields, SetOptions(merge: true));
     } on FirebaseException catch (e) {
       throw AppException.fromFirestore(e);
     }

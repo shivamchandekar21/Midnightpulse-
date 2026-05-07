@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:midnight_pulse/theme/app_theme.dart';
+import 'package:midnight_pulse/providers/user_providers.dart';
 
-class EditProfileScreen extends StatefulWidget {
+class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
   @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
+  ConsumerState<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullName = TextEditingController();
   final _username = TextEditingController();
@@ -17,6 +19,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _bio = TextEditingController();
   final _location = TextEditingController();
   bool _twoFactor = false;
+  bool _isInitialized = false;
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -30,20 +34,66 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _save() {
-    if (_formKey.currentState?.validate() ?? false) {
+    _saveAsync();
+  }
+
+  Future<void> _saveAsync() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final fields = <String, dynamic>{};
+    final name = _fullName.text.trim();
+    final username = _username.text.trim();
+    final email = _email.text.trim();
+    final phone = _phone.text.trim();
+    final bio = _bio.text.trim();
+    final location = _location.text.trim();
+
+    if (name.isNotEmpty) fields['name'] = name;
+    if (username.isNotEmpty) fields['username'] = username;
+    if (email.isNotEmpty) fields['email'] = email;
+    if (phone.isNotEmpty) fields['phone'] = phone;
+    if (bio.isNotEmpty) fields['bio'] = bio;
+    if (location.isNotEmpty) fields['location'] = location;
+
+    if (fields.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile saved (local preview).')),
+        const SnackBar(content: Text('No changes to save.')),
       );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      await ref.read(updateUserProvider.notifier).update(fields);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated.')),
+      );
+      if (mounted) Navigator.of(context).pop();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Update failed: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(appUserProvider).value;
+    if (!_isInitialized && user != null) {
+      _fullName.text = user.name;
+      _email.text = user.email;
+      _phone.text = user.phone;
+      _isInitialized = true;
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const BackButton(color: AppColors.textPrimary),
         title: const Text('Edit Profile'),
       ),
       body: SafeArea(
@@ -177,10 +227,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: _save,
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 14.0),
-                        child: Text('Save Changes'),
+                      onPressed: _isSaving ? null : _save,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14.0),
+                        child: _isSaving
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Save Changes'),
                       ),
                     ),
                   ],

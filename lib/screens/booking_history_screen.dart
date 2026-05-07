@@ -30,6 +30,7 @@ class BookingHistoryScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: const BackButton(color: AppColors.textPrimary),
         title: const Text('Booking History'),
       ),
       body: SafeArea(

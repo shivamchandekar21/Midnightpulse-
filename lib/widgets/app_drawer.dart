@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:midnight_pulse/screens/help_support_screen.dart';
+import 'package:midnight_pulse/screens/midnight_pass_screen.dart';
+import 'package:midnight_pulse/screens/payment_methods_screen.dart';
+import 'package:midnight_pulse/screens/premium_access_screen.dart';
+import 'package:midnight_pulse/screens/saved_events_screen.dart';
 import 'package:midnight_pulse/theme/app_theme.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -10,14 +15,6 @@ class AppDrawer extends StatelessWidget {
 
   final int currentIndex;
   final ValueChanged<int> onSelectPage;
-
-  void _showPlaceholder(BuildContext context, String label) {
-    final messenger = ScaffoldMessenger.of(context);
-    Navigator.pop(context);
-    messenger.showSnackBar(
-      SnackBar(content: Text('$label panel is ready for your next screen.')),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,25 +114,54 @@ class AppDrawer extends StatelessWidget {
                       _DrawerTile(
                         icon: Icons.bookmarks_rounded,
                         label: 'Saved Lineup',
-                        onTap: () => _showPlaceholder(context, 'Saved lineup'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SavedEventsScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _DrawerTile(
                         icon: Icons.account_balance_wallet_rounded,
                         label: 'Payment Methods',
-                        onTap: () =>
-                            _showPlaceholder(context, 'Payment methods'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const PaymentMethodsScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _DrawerTile(
                         icon: Icons.workspace_premium_rounded,
                         label: 'Midnight Pass',
-                        onTap: () =>
-                            _showPlaceholder(context, 'Midnight Pass'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MidnightPassScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _DrawerTile(
                         icon: Icons.support_agent_rounded,
                         label: 'Help & Support',
-                        onTap: () =>
-                            _showPlaceholder(context, 'Help and support'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HelpSupportScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -164,6 +190,31 @@ class AppDrawer extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const PremiumAccessScreen(),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.violet),
+                          ),
+                          child: Text(
+                            'Learn More',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.violet,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ),
                     ],

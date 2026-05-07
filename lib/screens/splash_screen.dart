@@ -4,25 +4,10 @@ import 'package:midnight_pulse/auth/login_page.dart';
 import 'package:midnight_pulse/screens/main_screen.dart';
 import 'package:midnight_pulse/theme/app_theme.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _checkAuthState();
-  }
-
-  Future<void> _checkAuthState() async {
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-
+  void _onGetStarted(BuildContext context) {
     final User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
       Navigator.of(context).pushReplacement(
@@ -38,42 +23,89 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppGradients.primary,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accent.withValues(alpha: 0.3),
-                    blurRadius: 30,
-                    spreadRadius: 5,
+      body: Stack(
+        children: [
+          // Background: Full-screen GIF
+          SizedBox.expand(
+            child: Image.asset(
+              'assets/disco_ball.gif',
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: AppColors.background,
+                  child: Center(
+                    child: Icon(
+                      Icons.nightlife_rounded,
+                      size: 120,
+                      color: AppColors.accent,
+                    ),
                   ),
-                ],
-              ),
-              child: const Icon(
-                Icons.nightlife_rounded,
-                size: 64,
-                color: AppColors.backgroundDeep,
-              ),
+                );
+              },
             ),
-            const SizedBox(height: 32),
-            const Text(
-              'Midnight Pulse',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-                letterSpacing: 1.5,
-              ),
+          ),
+          
+          // Dark overlay for better text visibility
+          Container(
+            color: Colors.black.withOpacity(0.5),
+          ),
+          
+          // Foreground content
+          SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Top spacer (empty space)
+                const SizedBox(height: 20),
+                
+                // Center: App title
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      'MIDNIGHT PULSE',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 2.0,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Bottom: Get Started button
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: () => _onGetStarted(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00BCD4), // Cyan/Teal
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        elevation: 8,
+                        shadowColor: const Color(0xFF00BCD4).withOpacity(0.5),
+                      ),
+                      child: const Text(
+                        'GET STARTED',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

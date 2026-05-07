@@ -113,8 +113,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                 // ── Header ──
                 Row(
                   children: [
@@ -475,9 +479,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
                       .bodySmall
                       ?.copyWith(color: AppColors.textMuted, fontSize: 11),
                 ),
-                const Spacer(),
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        ),
+                const SizedBox(height: 12),
 
-                // ── Proceed button ──
+                // ── Proceed button ── (pinned)
                 SizedBox(
                   width: double.infinity,
                   child: AnimatedContainer(
@@ -485,12 +494,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
                     child: ElevatedButton(
                       onPressed: _isSoldOut ? null : _proceedToPayment,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _isSoldOut
-                            ? AppColors.surfaceStrong
-                            : AppColors.accent,
-                        foregroundColor: _isSoldOut
-                            ? AppColors.textMuted
-                            : AppColors.background,
+                        backgroundColor: _isSoldOut ? AppColors.surfaceStrong : AppColors.accent,
+                        foregroundColor: _isSoldOut ? AppColors.textMuted : AppColors.background,
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),

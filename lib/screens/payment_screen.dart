@@ -134,13 +134,25 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen>
       );
 
       // 3) Open Razorpay checkout (SDK handles the payment UI)
-      final paymentResult = await _razorpayService.openCheckout(
-        order: order,
-        name: 'Midnight Pulse',
-        description: widget.event.title,
-        prefillEmail: appUser?.email ?? '',
-        prefillContact: appUser?.phone ?? '',
-      );
+      RazorpayPaymentResult paymentResult;
+      
+      // If we are testing with the mock server, skip the real Razorpay SDK
+      if (order.id.startsWith('order_mock_')) {
+        await Future.delayed(const Duration(seconds: 2)); // Simulate user taking time to pay
+        paymentResult = RazorpayPaymentResult(
+          paymentId: 'pay_mock_67890',
+          orderId: order.id,
+          signature: 'dummy_signature',
+        );
+      } else {
+        paymentResult = await _razorpayService.openCheckout(
+          order: order,
+          name: 'Midnight Pulse',
+          description: widget.event.title,
+          prefillEmail: appUser?.email ?? '',
+          prefillContact: appUser?.phone ?? '',
+        );
+      }
 
       // 4) Verify payment server-side via Cloud Function
       await _razorpayService.verifyPayment(
