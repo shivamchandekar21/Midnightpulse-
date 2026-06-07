@@ -524,6 +524,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         updatedAt: DateTime.now(),
                                       ),
                                     );
+                                     await controller.createEvent(
+                                      Event(
+                                        id: '',
+                                        title: "Alpha  Pulse MARTIN GARRIX",
+                                        description:
+                                            "The biggest Summer  night festival in the city. Get ready to jump!",
+                                        location: "Goa Arena",
+                                        imageUrl:
+                                            "https://images.unsplash.com/photo-1540039155732-d68f7c000e30?q=80&w=2000&auto=format&fit=crop",
+                                        startDate: DateTime.now().add(
+                                          const Duration(days: 10),
+                                        ),
+                                        endDate: DateTime.now().add(
+                                          const Duration(days: 10, hours: 5),
+                                        ),
+                                        price: 2100,
+                                        tag: "EDM",
+                                        isPremium: true,
+                                        isActive: true,
+                                        createdAt: DateTime.now(),
+                                        updatedAt: DateTime.now(),
+                                      ),
+                                    );
                                     await _refreshEvents();
                                   },
                           );

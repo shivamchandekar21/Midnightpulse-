@@ -91,6 +91,7 @@ class Event {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'title': title,
       'description': description,
       'startDate': Timestamp.fromDate(startDate),

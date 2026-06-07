@@ -220,6 +220,22 @@ class EventsController extends Notifier<AsyncValue<EventListState>> {
     }
   }
 
+  Future<void> createMultipleEvents(List<Event> events) async {
+    final currentState = state.value;
+
+    try {
+      for (final event in events) {
+        await _repository.createEvent(event);
+      }
+      await refreshEvents();
+    } on AppException {
+      if (currentState != null) {
+        state = AsyncData(currentState);
+      }
+      rethrow;
+    }
+  }
+
   Future<void> updateEvent(Event event) async {
     final currentState = state.value;
 
