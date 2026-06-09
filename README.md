@@ -3,7 +3,7 @@
 **Midnight Pulse** is a premium Flutter application designed for discovering exclusive events, booking concert tickets, and managing digital event access. Built with a focus on modern UI/UX, seamless payment integration, and a robust cloud backend, this app provides a complete end-to-end event discovery and booking experience.
 
 <p align="center">
-  <img src="app_screenshot.png" alt="Midnight Pulse App Screenshot" width="300" />
+  <img src="appimg.png" alt="Midnight Pulse App Screenshot" width="300" />
 </p>
 
 ## 🚀 Key Features

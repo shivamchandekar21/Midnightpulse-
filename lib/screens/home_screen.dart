@@ -517,7 +517,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           const Duration(days: 5, hours: 3),
                                         ),
                                         price: 999,
-                                        tag: "Jazz",
+                                        tag: "Bazz",
                                         isPremium: false,
                                         isActive: true,
                                         createdAt: DateTime.now(),
@@ -527,20 +527,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                      await controller.createEvent(
                                       Event(
                                         id: '',
-                                        title: "Alpha  Pulse MARTIN GARRIX",
+                                        title: "Techno Warehouse Party",
                                         description:
-                                            "The biggest Summer  night festival in the city. Get ready to jump!",
-                                        location: "Goa Arena",
+                                            "Underground techno beats till dawn. Not for the faint-hearted.",
+                                        location: "Secret Warehouse, Bangalore",
                                         imageUrl:
-                                            "https://images.unsplash.com/photo-1540039155732-d68f7c000e30?q=80&w=2000&auto=format&fit=crop",
+                                            "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=2000&auto=format&fit=crop",
                                         startDate: DateTime.now().add(
-                                          const Duration(days: 10),
+                                          const Duration(days: 7),
                                         ),
                                         endDate: DateTime.now().add(
-                                          const Duration(days: 10, hours: 5),
+                                          const Duration(days: 7, hours: 5),
                                         ),
-                                        price: 2100,
-                                        tag: "EDM",
+                                        price: 2400,
+                                        tag: "Techno",
                                         isPremium: true,
                                         isActive: true,
                                         createdAt: DateTime.now(),
